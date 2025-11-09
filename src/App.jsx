@@ -11,16 +11,38 @@ import hand from "./assets/hand.png";
 const VVPAT = () => {
   const [voter, setVoter] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [voterID, setVoterID] = useState(null);
+
+  // Listen to VoteTrigger to get current voter ID
+  useEffect(() => {
+    const triggerRef = doc(db, "Control", "VoteTrigger");
+
+    const unsubTrigger = onSnapshot(triggerRef, (triggerSnap) => {
+      if (triggerSnap.exists()) {
+        const id = triggerSnap.data()?.vi;
+        setVoterID(id);
+      } else {
+        setVoterID(null);
+      }
+    });
+
+    return () => unsubTrigger();
+  }, []);
 
   useEffect(() => {
-    const voterId = "3233";
-    const docRef = doc(db, "Voters", voterId);
+    if (!voterID) return;
 
-    const unsub = onSnapshot(
-      docRef,
+    const voterRef = doc(db, "Voters", voterID);
+    setLoading(true);
+
+    const unsubVoter = onSnapshot(
+      voterRef,
       (docSnap) => {
-        if (docSnap.exists()) setVoter(docSnap.data());
-        else setVoter(null);
+        if (docSnap.exists()) {
+          setVoter(docSnap.data());
+        } else {
+          setVoter(null);
+        }
         setLoading(false);
       },
       (error) => {
@@ -29,8 +51,8 @@ const VVPAT = () => {
       }
     );
 
-    return () => unsub();
-  }, []);
+    return () => unsubVoter();
+  }, [voterID]);
 
   return (
     <div className="w-screen h-screen flex bg-gradient-to-r from-[#f2f2f2] to-[#ffffff] overflow-hidden">
